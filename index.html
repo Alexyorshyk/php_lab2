@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Лабораторна робота №2. Завантаження файлів і робота з текстовим журналом у PHP.">
+    <title>Лабораторна робота №2 | Робота з файлами</title>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --background: #f1f5f9;
+            --card: #ffffff;
+            --text: #172033;
+            --muted: #64748b;
+            --border: #dbe3ee;
+            --success: #15803d;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            color: var(--text);
+            background: linear-gradient(135deg, #eff6ff 0%, var(--background) 55%, #eef2ff 100%);
+        }
+
+        .container {
+            width: min(920px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 44px 0;
+        }
+
+        .header {
+            margin-bottom: 28px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            margin-bottom: 12px;
+            padding: 7px 12px;
+            border: 1px solid #bfdbfe;
+            border-radius: 999px;
+            color: var(--primary-dark);
+            background: #eff6ff;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: clamp(30px, 5vw, 44px);
+        }
+
+        .subtitle {
+            max-width: 680px;
+            margin: 0 auto;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 22px;
+        }
+
+        .card {
+            padding: 26px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--card);
+            box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        .card h2 {
+            margin: 0 0 8px;
+            font-size: 22px;
+        }
+
+        .description {
+            min-height: 46px;
+            margin: 0 0 20px;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        input[type="file"],
+        textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #f8fafc;
+            font: inherit;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+        }
+
+        input[type="file"]::file-selector-button {
+            margin-right: 12px;
+            padding: 9px 12px;
+            border: 0;
+            border-radius: 7px;
+            color: #ffffff;
+            background: var(--primary);
+            cursor: pointer;
+        }
+
+        textarea {
+            min-height: 132px;
+            padding: 12px;
+            resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: 3px solid rgba(37, 99, 235, 0.16);
+            border-color: var(--primary);
+        }
+
+        .hint {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .button {
+            width: 100%;
+            margin-top: 18px;
+            padding: 12px 18px;
+            border: 0;
+            border-radius: 10px;
+            color: #ffffff;
+            background: var(--primary);
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .navigation {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        .navigation a {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--primary-dark);
+            background: #ffffff;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .navigation a:hover {
+            border-color: #93c5fd;
+            background: #eff6ff;
+        }
+
+        footer {
+            margin-top: 28px;
+            color: var(--muted);
+            text-align: center;
+            font-size: 14px;
+        }
+
+        @media (max-width: 720px) {
+            .container {
+                padding: 28px 0;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .description {
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <header class="header">
+            <span class="badge">Лабораторна робота №2</span>
+            <h1>Робота з файлами у PHP</h1>
+            <p class="subtitle">
+                Завантаження зображень на сервер, запис тексту у файл
+                <strong>log.txt</strong> та перегляд завантажених файлів.
+            </p>
+        </header>
+
+        <section class="grid" aria-label="Форми для роботи з файлами">
+            <article class="card">
+                <h2>Завантаження зображення</h2>
+                <p class="description">
+                    Оберіть зображення, яке потрібно зберегти в директорії uploads.
+                </p>
+
+                <form action="process.php" method="post" enctype="multipart/form-data">
+                    <label for="uploaded_file">Оберіть файл</label>
+                    <input
+                        type="file"
+                        id="uploaded_file"
+                        name="uploaded_file"
+                        accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                        required
+                    >
+                    <p class="hint">Допустимі формати: PNG, JPG, JPEG. Максимальний розмір: 2 МБ.</p>
+                    <button class="button" type="submit">Завантажити файл</button>
+                </form>
+            </article>
+
+            <article class="card">
+                <h2>Запис у текстовий файл</h2>
+                <p class="description">
+                    Введений текст буде додано до файла log.txt із датою та часом запису.
+                </p>
+
+                <form action="text.php" method="post">
+                    <label for="text">Текст повідомлення</label>
+                    <textarea
+                        id="text"
+                        name="text"
+                        placeholder="Введіть текст для запису у файл..."
+                        required
+                    ></textarea>
+                    <button class="button" type="submit">Записати у log.txt</button>
+                </form>
+            </article>
+        </section>
+
+        <nav class="navigation" aria-label="Навігація">
+            <a href="list.php">Переглянути завантажені файли</a>
+            <a href="text.php">Переглянути журнал</a>
+        </nav>
+
+        <footer>
+            Виконав: студент групи ІКМ-224а Пономаренко Олександр Володимирович
+        </footer>
+    </main>
+</body>
+</html>
