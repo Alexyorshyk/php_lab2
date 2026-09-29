@@ -1,54 +1,109 @@
 <?php
-const MAX_FILE_SIZE = 2 * 1024 * 1024;
-$allowedExtensions = ['png', 'jpg', 'jpeg'];
-$allowedMimeTypes = ['image/png', 'image/jpeg'];
-$uploadDir = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
+// text.php: запис тексту у файл log.txt і показ його вмісту
 
-function finishPage(string $message): void {
-    echo '<!DOCTYPE html><html lang="uk"><head><meta charset="UTF-8"><title>Результат</title></head><body>';
-    echo $message;
-    echo '<p><a href="index.html">На головну</a> | <a href="list.php">Список файлів</a></p></body></html>';
-    exit;
+$logFile = __DIR__ . DIRECTORY_SEPARATOR . 'log.txt';
+$message = '';
+$messageClass = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $text = trim($_POST['text'] ?? '');
+
+    if ($text === '') {
+        $message = 'Введіть текст перед відправленням форми.';
+        $messageClass = 'error';
+    } else {
+        $record = '[' . date('Y-m-d H:i:s') . '] ' . $text . PHP_EOL;
+        $result = file_put_contents($logFile, $record, FILE_APPEND | LOCK_EX);
+
+        if ($result === false) {
+            $message = 'Не вдалося записати дані у log.txt. Перевірте права на запис.';
+            $messageClass = 'error';
+        } else {
+            $message = 'Текст успішно записано у log.txt.';
+            $messageClass = 'success';
+        }
+    }
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['uploaded_file'])) {
-    finishPage('<h1>Помилка</h1><p>Файл не передано.</p>');
+if (file_exists($logFile)) {
+    $content = file_get_contents($logFile);
+    if ($content === false) {
+        $content = 'Не вдалося прочитати файл log.txt.';
+    } elseif ($content === '') {
+        $content = 'Журнал поки що порожній.';
+    }
+} else {
+    $content = 'Файл log.txt ще не створено.';
 }
-$file = $_FILES['uploaded_file'];
-if ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
-    finishPage('<h1>Помилка</h1><p>Файл не був успішно завантажений через HTTP POST.</p>');
-}
-if ($file['size'] > MAX_FILE_SIZE) {
-    finishPage('<h1>Помилка</h1><p>Розмір файлу перевищує 2 МБ.</p>');
-}
-$originalName = basename($file['name']);
-$extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-if (!in_array($extension, $allowedExtensions, true)) {
-    finishPage('<h1>Помилка</h1><p>Дозволені лише файли PNG, JPG та JPEG.</p>');
-}
-$finfo = new finfo(FILEINFO_MIME_TYPE);
-$mimeType = $finfo->file($file['tmp_name']);
-if (!in_array($mimeType, $allowedMimeTypes, true)) {
-    finishPage('<h1>Помилка</h1><p>Фактичний тип файлу не є дозволеним зображенням.</p>');
-}
-if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
-    finishPage('<h1>Помилка</h1><p>Не вдалося створити папку uploads.</p>');
-}
-$baseName = pathinfo($originalName, PATHINFO_FILENAME);
-$baseName = preg_replace('/[^a-zA-Z0-9_-]/u', '_', $baseName);
-if ($baseName === '') $baseName = 'image';
-$newName = $baseName . '.' . $extension;
-$counter = 1;
-while (file_exists($uploadDir . DIRECTORY_SEPARATOR . $newName)) {
-    $newName = $baseName . '_' . date('Ymd_His') . '_' . $counter . '.' . $extension;
-    $counter++;
-}
-$destination = $uploadDir . DIRECTORY_SEPARATOR . $newName;
-if (!move_uploaded_file($file['tmp_name'], $destination)) {
-    finishPage('<h1>Помилка</h1><p>Не вдалося зберегти файл.</p>');
-}
-$safeName = htmlspecialchars($newName, ENT_QUOTES, 'UTF-8');
-$safeType = htmlspecialchars($mimeType, ENT_QUOTES, 'UTF-8');
-$sizeKb = number_format(filesize($destination) / 1024, 2, '.', '');
-finishPage("<h1>Файл успішно завантажено</h1><ul><li>Ім'я: {$safeName}</li><li>Тип: {$safeType}</li><li>Розмір: {$sizeKb} КБ</li></ul><p><a href=\"uploads/" . rawurlencode($newName) . "\" download>Завантажити файл</a></p>");
 ?>
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Текстовий журнал</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            color: #172033;
+            background: #f1f5f9;
+        }
+        .card {
+            width: min(760px, 100%);
+            margin: 30px auto;
+            padding: 28px;
+            border: 1px solid #dbe3ee;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+        }
+        h1 { margin-top: 0; }
+        .message {
+            padding: 12px 14px;
+            border-radius: 9px;
+            font-weight: 700;
+        }
+        .success { color: #166534; background: #dcfce7; }
+        .error { color: #991b1b; background: #fee2e2; }
+        pre {
+            min-height: 160px;
+            padding: 16px;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+            border: 1px solid #dbe3ee;
+            border-radius: 10px;
+            background: #f8fafc;
+            font-family: Consolas, monospace;
+            line-height: 1.5;
+        }
+        a {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: #ffffff;
+            background: #2563eb;
+            font-weight: 700;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <h1>Вміст файла log.txt</h1>
+
+        <?php if ($message !== ''): ?>
+            <p class="message <?= htmlspecialchars($messageClass, ENT_QUOTES, 'UTF-8') ?>">
+                <?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?>
+            </p>
+        <?php endif; ?>
+
+        <pre><?= htmlspecialchars($content, ENT_QUOTES, 'UTF-8') ?></pre>
+        <a href="index.html">Повернутися на головну</a>
+    </main>
+</body>
+</html>
