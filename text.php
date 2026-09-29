@@ -50,5 +50,5 @@ if (!move_uploaded_file($file['tmp_name'], $destination)) {
 $safeName = htmlspecialchars($newName, ENT_QUOTES, 'UTF-8');
 $safeType = htmlspecialchars($mimeType, ENT_QUOTES, 'UTF-8');
 $sizeKb = number_format(filesize($destination) / 1024, 2, '.', '');
-finishPage("<h1>Файл успішно завантажено</h1><ul><li>Ім'я: {$safeName}</li><li>Тип: {$safeType}</li><li>Розмір: {$sizeKb} КБ</li></ul><p><a href="uploads/" . rawurlencode($newName) . "" download>Завантажити файл</a></p>");
+finishPage("<h1>Файл успішно завантажено</h1><ul><li>Ім'я: {$safeName}</li><li>Тип: {$safeType}</li><li>Розмір: {$sizeKb} КБ</li></ul><p><a href=\"uploads/" . rawurlencode($newName) . "\" download>Завантажити файл</a></p>");
 ?>
